@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BizMoodDiaryMapper">
+    
+    <resultMap type="BizMoodDiary" id="BizMoodDiaryResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="content"    column="content"    />
+        <result property="moodScore"    column="mood_score"    />
+        <result property="moodTag"    column="mood_tag"    />
+        <result property="aiAdvice"    column="ai_advice"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="nickName"    column="nick_name"    />
+    </resultMap>
+
+    <sql id="selectBizMoodDiaryVo">
+        select d.id, d.user_id, d.content, d.mood_score, d.mood_tag, d.ai_advice, d.create_time, d.update_time, d.del_flag, u.nick_name
+        from biz_mood_diary d
+                 left join sys_user u on d.user_id = u.user_id
+    </sql>
+
+
+    <select id="selectLatestDiaryByUserId" parameterType="Long" resultMap="BizMoodDiaryResult">
+        <include refid="selectBizMoodDiaryVo"/>
+        WHERE d.user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectChartData" resultMap="BizMoodDiaryResult">
+        SELECT create_time, mood_score, user_id
+        FROM biz_mood_diary
+        <where>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            AND create_time > DATE_SUB(NOW(), INTERVAL 7 DAY)
+            AND mood_score IS NOT NULL
+        </where>
+        ORDER BY create_time ASC
+    </select>
+
+    <select id="selectBizMoodDiaryList" parameterType="BizMoodDiary" resultMap="BizMoodDiaryResult">
+        <include refid="selectBizMoodDiaryVo"/>
+        <where>
+            <!-- 加上 d. 前缀防止歧义 -->
+            <if test="userId != null "> and d.user_id = #{userId}</if>
+            <if test="moodScore != null "> and d.mood_score = #{moodScore}</if>
+            <if test="moodTag != null  and moodTag != ''"> and d.mood_tag like concat('%', #{moodTag}, '%')</if>
+            <if test="content != null  and content != ''"> and d.content like concat('%', #{content}, '%')</if>
+            <if test="aiAdvice != null  and aiAdvice != ''"> and d.ai_advice like concat('%', #{aiAdvice}, '%')</if>
+
+            <!-- 新增：按学生姓名查询 -->
+            <if test="nickName != null and nickName != ''"> and u.nick_name like concat('%', #{nickName}, '%')</if>
+
+            <!-- 加上 d. 前缀 -->
+            <if test='riskLevel != null and riskLevel == "1"'>
+                AND d.mood_score &gt;= 80
+            </if>
+            <if test='riskLevel != null and riskLevel == "2"'>
+                AND d.mood_score &gt;= 60 AND d.mood_score &lt; 80
+            </if>
+            <if test='riskLevel != null and riskLevel == "3"'>
+                AND d.mood_score &gt;= 40 AND d.mood_score &lt; 60
+            </if>
+            <if test='riskLevel != null and riskLevel == "4"'>
+                AND d.mood_score &lt; 40
+            </if>
+
+        </where>
+    </select>
+    
+    <select id="selectBizMoodDiaryById" parameterType="Long" resultMap="BizMoodDiaryResult">
+        <include refid="selectBizMoodDiaryVo"/>
+        where id = #{id}
+    </select>
+
+
+    <insert id="insertBizMoodDiary" parameterType="BizMoodDiary" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_mood_diary
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="moodScore != null">mood_score,</if>
+            <if test="moodTag != null">mood_tag,</if>
+            <if test="aiAdvice != null">ai_advice,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="moodScore != null">#{moodScore},</if>
+            <if test="moodTag != null">#{moodTag},</if>
+            <if test="aiAdvice != null">#{aiAdvice},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizMoodDiary" parameterType="BizMoodDiary">
+        update biz_mood_diary
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="moodScore != null">mood_score = #{moodScore},</if>
+            <if test="moodTag != null">mood_tag = #{moodTag},</if>
+            <if test="aiAdvice != null">ai_advice = #{aiAdvice},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizMoodDiaryById" parameterType="Long">
+        delete from biz_mood_diary where id = #{id}
+    </delete>
+
+    <delete id="deleteBizMoodDiaryByIds" parameterType="String">
+        delete from biz_mood_diary where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectRiskCountToday" resultType="int">
+        SELECT count(1)
+        FROM biz_mood_diary
+        WHERE mood_score &lt; 60
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    </select>
+
+    <select id="selectUnprocessedCount" resultType="int">
+        SELECT count(1)
+        FROM sys_intervention_record
+        WHERE status = '0'
+    </select>
+
+    <select id="selectMoodTrend" resultType="java.util.Map">
+        SELECT
+            date_format(create_time, '%Y-%m-%d') as date,
+            ROUND(AVG(mood_score), 1) as score
+        FROM biz_mood_diary
+        WHERE create_time >= date_sub(now(), interval 7 day)
+        GROUP BY date_format(create_time, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+
+    <select id="selectHotWords" resultType="java.util.Map">
+        SELECT
+            mood_tag as name,
+            count(1) as value
+        FROM biz_mood_diary
+        WHERE mood_tag is not null AND mood_tag != ''
+        GROUP BY mood_tag
+        ORDER BY value DESC
+            LIMIT 20
+    </select>
+
+    <select id="selectStudentCount" resultType="int">
+        SELECT count(1)
+        FROM sys_user_role
+        WHERE role_id = 100
+    </select>
+
+    <select id="selectTotalDiaryCount" resultType="int">
+        SELECT count(1) FROM biz_mood_diary
+    </select>
+
+    <select id="selectTotalInterventionCount" resultType="int">
+        SELECT count(1) FROM sys_intervention_record
+    </select>
+
+
+
+</mapper>

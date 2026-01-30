@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BizMoodDiaryMapper">
+    
+    <resultMap type="BizMoodDiary" id="BizMoodDiaryResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="content"    column="content"    />
+        <result property="moodScore"    column="mood_score"    />
+        <result property="moodTag"    column="mood_tag"    />
+        <result property="aiAdvice"    column="ai_advice"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="delFlag"    column="del_flag"    />
+    </resultMap>
+
+    <sql id="selectBizMoodDiaryVo">
+        select id, user_id, content, mood_score, mood_tag, ai_advice, create_time, update_time, del_flag from biz_mood_diary
+    </sql>
+
+    <select id="selectBizMoodDiaryList" parameterType="BizMoodDiary" resultMap="BizMoodDiaryResult">
+        <include refid="selectBizMoodDiaryVo"/>
+        <where>  
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="moodScore != null "> and mood_score = #{moodScore}</if>
+            <if test="moodTag != null  and moodTag != ''"> and mood_tag = #{moodTag}</if>
+            <if test="aiAdvice != null  and aiAdvice != ''"> and ai_advice = #{aiAdvice}</if>
+        </where>
+    </select>
+    
+    <select id="selectBizMoodDiaryById" parameterType="Long" resultMap="BizMoodDiaryResult">
+        <include refid="selectBizMoodDiaryVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertBizMoodDiary" parameterType="BizMoodDiary" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_mood_diary
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="moodScore != null">mood_score,</if>
+            <if test="moodTag != null">mood_tag,</if>
+            <if test="aiAdvice != null">ai_advice,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="moodScore != null">#{moodScore},</if>
+            <if test="moodTag != null">#{moodTag},</if>
+            <if test="aiAdvice != null">#{aiAdvice},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizMoodDiary" parameterType="BizMoodDiary">
+        update biz_mood_diary
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="moodScore != null">mood_score = #{moodScore},</if>
+            <if test="moodTag != null">mood_tag = #{moodTag},</if>
+            <if test="aiAdvice != null">ai_advice = #{aiAdvice},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizMoodDiaryById" parameterType="Long">
+        delete from biz_mood_diary where id = #{id}
+    </delete>
+
+    <delete id="deleteBizMoodDiaryByIds" parameterType="String">
+        delete from biz_mood_diary where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
