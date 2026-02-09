@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SquareLikeMapper">
+
+    <resultMap type="SquareLike" id="SquareLikeResult">
+        <result property="id"    column="id"    />
+        <result property="postId"    column="post_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectSquareLikeVo">
+        select id, post_id, user_id, create_time from square_like
+    </sql>
+
+    <insert id="insert" parameterType="SquareLike" useGeneratedKeys="true" keyProperty="id">
+        insert into square_like
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="postId != null">post_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="postId != null">#{postId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <select id="countByPostId" parameterType="Long" resultType="int">
+        SELECT COUNT(*) FROM square_like WHERE post_id = #{postId}
+    </select>
+
+    <select id="selectByUserAndPost" resultMap="SquareLikeResult">
+        <include refid="selectSquareLikeVo"/>
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </select>
+
+</mapper>

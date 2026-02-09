@@ -52,6 +52,35 @@
               resize="none"
             ></el-input>
 
+            <!-- 匿名广场开关 -->
+            <div class="square-share-section">
+              <div class="square-switch-row">
+                <el-switch
+                  v-model="isPublicSwitch"
+                  active-color="#FF9F7F"
+                  inactive-color="#dcdfe6"
+                />
+                <span class="switch-label">公开到匿名广场</span>
+              </div>
+              
+              <transition name="fade">
+                <div v-if="isPublicSwitch" class="square-tag-select">
+                  <div class="tag-label">选择匿名标签：</div>
+                  <el-select v-model="selectedAnonymousTag" size="small" placeholder="请选择标签">
+                    <el-option
+                      v-for="tag in anonymousTagOptions"
+                      :key="tag"
+                      :label="tag"
+                      :value="tag"
+                    />
+                  </el-select>
+                  <div class="tag-hint">
+                    <i class="el-icon-info"></i> 开启后，日记会匿名显示在广场，其他用户可以给你抱抱鼓励~
+                  </div>
+                </div>
+              </transition>
+            </div>
+
             <div class="card-footer">
               <el-button type="primary" round block class="submit-btn" :loading="submitting" @click="submitDiary">
                 <i class="el-icon-s-promotion"></i> 投递心情 (AI 分析)
@@ -134,10 +163,17 @@ export default {
       // 表单数据
       diaryForm: {
         content: "",
-        moodScore: 90
+        moodScore: 90,
+        isPublic: '0',
+        anonymousTag: ''
       },
       
       submitting: false,
+      
+      // 匿名广场相关
+      isPublicSwitch: false,
+      anonymousTagOptions: ['开心', '平静', '需要安慰', '有点焦虑', '元气满满'],
+      selectedAnonymousTag: '开心',
       
       // 聊天相关
       chatInput: '',
@@ -163,7 +199,9 @@ export default {
       const payload = {
         content: this.diaryForm.content,
         moodScore: this.diaryForm.moodScore, 
-        moodTag: this.moodOptions.find(m => m.value === this.selectedMoodValue)?.label
+        moodTag: this.moodOptions.find(m => m.value === this.selectedMoodValue)?.label,
+        isPublic: this.isPublicSwitch ? '1' : '0',
+        anonymousTag: this.isPublicSwitch ? this.selectedAnonymousTag : ''
       };
 
       addDiary(payload).then(response => {
@@ -362,6 +400,59 @@ export default {
 .custom-textarea >>> .el-textarea__inner:focus {
   background: #fff;
   box-shadow: 0 0 0 1px #409EFF;
+}
+
+/* 匿名广场分享区域 */
+.square-share-section {
+  margin: 15px 0;
+  padding: 15px;
+  background: #fff8f5;
+  border-radius: 8px;
+  border: 1px solid #ffe4dc;
+}
+
+.square-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch-label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.square-tag-select {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #ffd4c8;
+}
+
+.tag-label {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.tag-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #FF9F7F;
+  line-height: 1.5;
+}
+
+.tag-hint i {
+  margin-right: 4px;
+}
+
+/* 过渡动画 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .card-footer { margin-top: 20px; }

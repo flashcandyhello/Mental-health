@@ -58,6 +58,14 @@
         <i class="el-icon-notebook-1"></i>
         <span>日记</span>
       </div>
+      <div class="tab-item" @click="$router.push('/student/reducepres')">
+        <i class="el-icon-timer"></i>
+        <span>考前减压</span>
+      </div>
+      <div class="tab-item" @click="$router.push('/student/square')">
+        <i class="el-icon-chat-square"></i>
+        <span>广场</span>
+      </div>
       <div class="tab-item active">
         <i class="el-icon-user"></i>
         <span>我的</span>

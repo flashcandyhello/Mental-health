@@ -70,6 +70,15 @@ public class BizMoodDiary extends BaseEntity
     /** 删除标志(0代表存在 2代表删除) */
     private String delFlag;
 
+    /** 是否公开(0否 1是) */
+    private String isPublic;
+
+    /** 匿名标签 */
+    private String anonymousTag;
+
+    /** 抱抱数 */
+    private Integer hugCount;
+
     public void setId(Long id) 
     {
         this.id = id;
@@ -140,6 +149,36 @@ public class BizMoodDiary extends BaseEntity
         return delFlag;
     }
 
+    public void setIsPublic(String isPublic) 
+    {
+        this.isPublic = isPublic;
+    }
+
+    public String getIsPublic() 
+    {
+        return isPublic;
+    }
+
+    public void setAnonymousTag(String anonymousTag) 
+    {
+        this.anonymousTag = anonymousTag;
+    }
+
+    public String getAnonymousTag() 
+    {
+        return anonymousTag;
+    }
+
+    public void setHugCount(Integer hugCount) 
+    {
+        this.hugCount = hugCount;
+    }
+
+    public Integer getHugCount() 
+    {
+        return hugCount;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -152,6 +191,9 @@ public class BizMoodDiary extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateTime", getUpdateTime())
             .append("delFlag", getDelFlag())
+            .append("isPublic", getIsPublic())
+            .append("anonymousTag", getAnonymousTag())
+            .append("hugCount", getHugCount())
             .toString();
     }
 }

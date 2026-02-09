@@ -85,4 +85,27 @@ public interface BizMoodDiaryMapper
      * 查询指定用户最近的一条日记（用于获取上次能量值）
      */
     public BizMoodDiary selectLatestDiaryByUserId(Long userId);
+
+    /**
+     * 查询广场公开日记列表
+     * 
+     * @return 公开日记集合
+     */
+    public List<BizMoodDiary> selectPublicPosts();
+
+    /**
+     * 增加日记的抱抱数
+     * 
+     * @param postId 日记ID
+     * @return 结果
+     */
+    public int incrementHugCount(Long postId);
+
+    /**
+     * 查询日记的抱抱数
+     * 
+     * @param postId 日记ID
+     * @return 抱抱数
+     */
+    public Integer selectHugCountById(Long postId);
 }

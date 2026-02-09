@@ -89,6 +89,22 @@ export const constantRoutes = [
         hidden: true
     },
     {
+        path: '/student/square',
+        component: () =>
+            import ('@/views/student/square/index'),
+        name: 'AnonymousSquare',
+        hidden: true,
+        meta: { title: '匿名广场' }
+    },
+    {
+        path: '/student/reducepres',
+        component: () =>
+            import ('@/views/student/reducepres/index'),
+        name: 'ExamMode',
+        hidden: true,
+        meta: { title: '考前减压' }
+    },
+    {
         path: '/redirect',
         component: Layout,
         hidden: true,
