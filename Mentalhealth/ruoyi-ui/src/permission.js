@@ -51,11 +51,15 @@ router.beforeEach((to, from, next) => {
                 })
             } else {
                 // ================== 【新增：路由守卫拦截】 START ==================
-                // 防止学生点击浏览器“后退”回到后台管理界面
+                // 防止学生点击浏览器"后退"回到后台管理界面
                 // 判断当前用户是否包含 'lower' (学生) 角色
                 if (store.getters.roles.includes('lower')) {
                     // 如果当前要去的地方不是 /student 开头的，也不是 404/401 等错误页
-                    if (!to.path.startsWith('/student') && to.path !== '/404' && to.path !== '/401') {
+                    // 同时排除学生可以访问的 /portal 和 /mood/result 页面
+                    const allowedStudentPaths = ['/portal', '/mood/result', '/404', '/401'];
+                    const isAllowedPath = allowedStudentPaths.some(path => to.path.startsWith(path));
+                    
+                    if (!to.path.startsWith('/student') && !isAllowedPath) {
                         next({ path: '/student/index', replace: true })
                         NProgress.done() // 结束进度条，防止页面卡死
                         return

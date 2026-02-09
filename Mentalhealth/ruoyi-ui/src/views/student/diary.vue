@@ -94,10 +94,14 @@
 <script>
 // 引入若依的通用工具
 import { listDiary, addDiary } from "@/api/system/diary"; // 确保你有这个API文件
-import { parseTime } from "@/utils/ruoyi"; 
+import { parseTime } from "@/utils/ruoyi";
+import { mapGetters } from "vuex"; 
 
 export default {
   name: "StudentDiary",
+  computed: {
+    ...mapGetters(["id"])
+  },
   data() {
     return {
       loading: false,
@@ -130,6 +134,7 @@ export default {
       listDiary({ 
         pageNum: 1, 
         pageSize: 20,
+        userId: this.id,
         // 👇👇👇 新增这两个排序参数 👇👇👇
         orderByColumn: 'createTime', // 按照创建时间排序
         isAsc: 'desc'                // desc 代表倒序 (最新的在上面)
@@ -160,6 +165,7 @@ export default {
       
       this.isSubmitting = true;
       const form = {
+        userId: this.id,
         title: "手机端日记",
         content: this.newDiary.content,
         moodTag: this.newDiary.moodTag,

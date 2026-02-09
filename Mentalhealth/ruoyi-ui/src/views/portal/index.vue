@@ -59,10 +59,10 @@
             </div>
             
             <div class="quick-links">
-               <div class="link-item" @click="$router.push('/diary')">
+               <div class="link-item" @click="$router.push('student/diary')">
                  <i class="el-icon-notebook-2"></i> 往昔记录
                </div>
-               <div class="link-item" @click="$router.push('/report')">
+               <div class="link-item" @click="$router.push('mood/result')">
                  <i class="el-icon-pie-chart"></i> 心灵报告
                </div>
              </div>
@@ -171,6 +171,7 @@ export default {
         this.submitting = false;
         const aiResult = response.data; 
 
+        // 学生端跳转到心情结果页面
         this.$router.push({
           path: "/mood/result",
           query: {
