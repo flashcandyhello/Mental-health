@@ -20,6 +20,8 @@ import com.ruoyi.framework.manager.factory.AsyncFactory;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.system.mapper.SysUserRoleMapper; // ✅ 换成这行
+import com.ruoyi.system.mapper.SysDeptMapper;
+import com.ruoyi.common.core.domain.entity.SysDept;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +39,8 @@ public class SysRegisterService
     private SysUserRoleMapper userRoleMapper; // ✅ 换成这行
     @Autowired
     private ISysConfigService configService;
+    @Autowired
+    private SysDeptMapper deptMapper;
 
     @Autowired
     private RedisCache redisCache;
@@ -85,6 +89,19 @@ public class SysRegisterService
             sysUser.setPwdUpdateDate(DateUtils.getNowDate());
 //            sysUser.setPassword(SecurityUtils.encryptPassword(password));
             sysUser.setPassword(password);
+            
+            if (Boolean.TRUE.equals(registerBody.getHelpOthers()))
+            {
+                sysUser.setRemark("help_others");
+            }
+            
+            // Randomly assign a department
+            List<SysDept> deptList = deptMapper.selectDeptList(new SysDept());
+            if (deptList != null && !deptList.isEmpty()) {
+                int randomIndex = (int) (Math.random() * deptList.size());
+                sysUser.setDeptId(deptList.get(randomIndex).getDeptId());
+            }
+            
             boolean regFlag = userService.registerUser(sysUser);
             if (!regFlag)
             {
@@ -92,11 +109,11 @@ public class SysRegisterService
             }
             else
             {
-                Long studentRoleId = 100L;
+                Long assignedRoleId = Math.random() < 0.1 ? 2L : 100L;
                 List<SysUserRole> list = new ArrayList<>();
                 SysUserRole ur = new SysUserRole();
                 ur.setUserId(sysUser.getUserId());
-                ur.setRoleId(studentRoleId);
+                ur.setRoleId(assignedRoleId);
                 list.add(ur);
                 userRoleMapper.batchUserRole(list); // ✅
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, MessageUtils.message("user.register.success")));

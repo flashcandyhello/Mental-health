@@ -87,7 +87,20 @@ spring:
         max-active: 8
         # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
-
+  # RabbitMQ 消息队列配置（架构储备，默认不启用）
+  rabbitmq:
+    enabled: false
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        # 设置手动确认机制(ACK)，保证日记分析任务不丢失
+        acknowledge-mode: manual
+  # WebSocket配置（架构储备，默认不启用）
+  websocket:
+    enabled: false
 # token配置
 token:
   # 令牌自定义标识

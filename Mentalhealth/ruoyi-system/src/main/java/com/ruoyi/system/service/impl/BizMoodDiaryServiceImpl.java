@@ -121,13 +121,13 @@ public class BizMoodDiaryServiceImpl implements IBizMoodDiaryService
         // 2. 调用 AI 获取“当次评分” (S_current)
         JSONObject aiResult = DeepSeekUtils.analyzeMood(bizMoodDiary.getContent());
 
-        // 防止空指针，使用 getDoubleValue
+
         double sCurrent = aiResult.getDoubleValue("score");
         String moodTag = aiResult.getString("tag");
         String advice = aiResult.getString("advice");
 
         // 3. 获取“上一次能量值” (E_prev)
-        // 调用第一步在 Mapper 中写好的查询方法
+
         BizMoodDiary lastDiary = bizMoodDiaryMapper.selectLatestDiaryByUserId(bizMoodDiary.getUserId());
 
         // 如果是该用户的第一篇日记，默认上次状态为 80 (健康基准)

@@ -5,7 +5,7 @@
         <img :src="avatar" alt="avatar" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'">
       </div>
       <div class="user-name">{{ user.nickName || '李明同学' }}</div>
-      <div class="user-dept">{{ user.deptName || '计算机科学与技术学院 · 2022级' }}</div>
+      <div class="user-dept">{{ user.deptName || '书法' }}</div>
       
       <div class="stats-row">
         <div class="stat-item">
@@ -41,6 +41,17 @@
         <i class="el-icon-lock item-icon"></i>
         <span class="item-text">修改密码</span>
         <i class="el-icon-arrow-right item-arrow"></i>
+      </div>
+      
+      <div class="menu-item" @click="handleHelpOthers" v-if="!hasRequestedHelp">
+        <i class="el-icon-service item-icon" style="color: #67C23A;"></i>
+        <span class="item-text" style="color: #67C23A;">我更想帮助他人</span>
+        <i class="el-icon-arrow-right item-arrow"></i>
+      </div>
+      
+      <div class="menu-item" v-else>
+        <i class="el-icon-service item-icon" style="color: #C0C4CC;"></i>
+        <span class="item-text" style="color: #C0C4CC;">已收到您的意向，请等待管理员同意</span>
       </div>
       
       <div class="menu-item" style="color: #F56C6C;" @click="handleLogout">
@@ -105,7 +116,7 @@ import { mapGetters } from "vuex";
 import { listDiary } from "@/api/system/diary";
 import { listRecord } from "@/api/system/record";
 // 引入你在 user.js 里看到的接口
-import { updateUserPwd } from "@/api/system/user"; 
+import { getUserProfile, updateUserProfile, updateUserPwd } from "@/api/system/user"; 
 
 export default {
   name: "StudentProfile",
@@ -120,6 +131,8 @@ export default {
     };
     
     return {
+      hasRequestedHelp: false,
+      realDeptName: '',
       // 弹窗控制
       pwdOpen: false,
       pwdForm: {
@@ -162,12 +175,22 @@ export default {
     user() {
       return {
         nickName: this.$store.state.user.nickName || this.name,
-        deptName: this.$store.state.user.dept ? this.$store.state.user.dept.deptName : '计算机科学与技术学院 · 2022级'
+        deptName: this.realDeptName || (this.$store.state.user.dept ? this.$store.state.user.dept.deptName : '暂无部门')
       }
     }
   },
   created() {
     this.getRealStats();
+    getUserProfile().then(res => {
+      if (res && res.data) {
+        if (res.data.remark === 'help_others') {
+          this.hasRequestedHelp = true;
+        }
+        if (res.data.dept) {
+          this.realDeptName = res.data.dept.deptName;
+        }
+      }
+    });
   },
   methods: {
     getRealStats() {
@@ -186,6 +209,20 @@ export default {
           this.stats.careCount = count;
         });
       }
+    },
+
+    handleHelpOthers() {
+      this.$alert("请等待管理员同意", "提示", {
+        type: "success"
+      }).then(() => {
+        const userToUpdate = {
+          userId: this.currentUserId,
+          remark: 'help_others'
+        };
+        updateUserProfile(userToUpdate).then(() => {
+          this.hasRequestedHelp = true;
+        });
+      });
     },
 
     // 打开修改密码弹窗

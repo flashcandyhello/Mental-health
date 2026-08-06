@@ -43,7 +43,7 @@
           <img :src="codeUrl" @click="getCode" class="register-code-img"/>
         </div>
       </el-form-item>
-      <el-form-item style="width:100%;">
+      <el-form-item style="width:100%; margin-bottom: 5px;">
         <el-button
           :loading="loading"
           size="medium"
@@ -53,6 +53,27 @@
         >
           <span v-if="!loading">注 册</span>
           <span v-else>注 册 中...</span>
+        </el-button>
+      </el-form-item>
+      <el-form-item style="width:100%;">
+        <el-button
+          size="medium"
+          type="success"
+          plain
+          style="width:100%; margin-bottom: 10px;"
+          @click.native.prevent="handleHelpOthers"
+          v-if="!registerForm.helpOthers"
+        >
+          我更想帮助他人
+        </el-button>
+        <el-button
+          size="medium"
+          type="success"
+          style="width:100%; margin-bottom: 10px;"
+          disabled
+          v-else
+        >
+          已收到您的意向，请继续完成注册
         </el-button>
         <div style="float: right;">
           <router-link class="link-type" :to="'/login'">使用已有账户登录</router-link>
@@ -80,6 +101,34 @@ export default {
         callback()
       }
     }
+    // 密码复杂度校验：必须包含大写字母、小写字母、特殊字符，长度8-20位
+    const validatePassword = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error("请输入您的密码"))
+        return
+      }
+      // 长度校验
+      if (value.length < 8 || value.length > 20) {
+        callback(new Error("密码长度必须为 8-20 位"))
+        return
+      }
+      // 必须包含小写字母
+      if (!/(?=.*[a-z])/.test(value)) {
+        callback(new Error("密码必须包含至少一个小写字母 (a-z)"))
+        return
+      }
+      // 必须包含大写字母
+      if (!/(?=.*[A-Z])/.test(value)) {
+        callback(new Error("密码必须包含至少一个大写字母 (A-Z)"))
+        return
+      }
+      // 必须包含特殊字符
+      if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(value)) {
+        callback(new Error("密码必须包含至少一个特殊字符 (!@#$%^&*等)"))
+        return
+      }
+      callback()
+    }
     return {
       title: process.env.VUE_APP_TITLE,
       footerContent: defaultSettings.footerContent,
@@ -89,7 +138,8 @@ export default {
         password: "",
         confirmPassword: "",
         code: "",
-        uuid: ""
+        uuid: "",
+        helpOthers: false
       },
       registerRules: {
         username: [
@@ -97,9 +147,7 @@ export default {
           { min: 2, max: 20, message: '用户账号长度必须介于 2 和 20 之间', trigger: 'blur' }
         ],
         password: [
-          { required: true, trigger: "blur", message: "请输入您的密码" },
-          { min: 5, max: 20, message: "用户密码长度必须介于 5 和 20 之间", trigger: "blur" },
-          { pattern: /^[^<>"'|\\]+$/, message: "不能包含非法字符：< > \" ' \\\ |", trigger: "blur" }
+          { required: true, validator: validatePassword, trigger: "blur" }
         ],
         confirmPassword: [
           { required: true, trigger: "blur", message: "请再次输入您的密码" },
@@ -144,6 +192,13 @@ export default {
           })
         }
       })
+    },
+    handleHelpOthers() {
+      this.$alert("请等待管理员同意", "提示", {
+        type: "success"
+      }).then(() => {
+        this.registerForm.helpOthers = true;
+      });
     }
   }
 }

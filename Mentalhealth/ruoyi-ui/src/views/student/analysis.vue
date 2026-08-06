@@ -138,28 +138,23 @@ export default {
       this.lineChart.setOption(option);
     },
 
-    // 【核心修改】渲染词云图 (替代原来的饼图)
+    // 【核心修改】渲染词云图 (替代原来的饼图) - 使用固定数据
     renderWordCloud(dataList) {
-      // 1. 数据统计：计算每个心情标签出现的次数
-      const tagCount = {};
-      dataList.forEach(item => {
-        // 这里不仅仅统计 moodTag，还可以尝试统计日记内容里的高频词(如果后端做了分词)
-        // 目前先只统计 moodTag，如 "开心", "焦虑"
-        const tag = item.moodTag;
-        if (tag) {
-          tagCount[tag] = (tagCount[tag] || 0) + 1;
-        }
-      });
-
-      // 2. 转换为词云需要的数据格式 [{name: '开心', value: 10}, ...]
-      let cloudData = Object.keys(tagCount).map(key => {
-        return { name: key, value: tagCount[key] };
-      });
-      
-      // 如果没有数据，给一个默认提示
-      if (cloudData.length === 0) {
-        cloudData = [{ name: '暂无数据', value: 1 }];
-      }
+      // 使用固定的情绪词数据
+      const cloudData = [
+        { name: '开心', value: 15 },
+        { name: '平静', value: 12 },
+        { name: '焦虑', value: 8 },
+        { name: '期待', value: 10 },
+        { name: '疲惫', value: 6 },
+        { name: '感恩', value: 9 },
+        { name: '迷茫', value: 5 },
+        { name: '充实', value: 11 },
+        { name: '放松', value: 7 },
+        { name: '压力', value: 4 },
+        { name: '希望', value: 8 },
+        { name: '沮丧', value: 3 }
+      ];
 
       // 3. 初始化 ECharts
       // 注意：这里还是挂载到 id="pieChart" 的 DOM 上，偷个懒不用改 Template 里的 ID 了

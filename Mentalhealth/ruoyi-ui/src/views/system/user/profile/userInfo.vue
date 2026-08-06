@@ -18,6 +18,22 @@
     <el-form-item>
       <el-button type="primary" size="mini" @click="submit">保存</el-button>
       <el-button type="danger" size="mini" @click="close">关闭</el-button>
+      <el-button
+        type="success"
+        size="mini"
+        @click.native.prevent="handleHelpOthers"
+        v-if="isStudent && !hasRequestedHelp"
+      >
+        我更想帮助他人
+      </el-button>
+      <el-button
+        type="success"
+        size="mini"
+        disabled
+        v-else-if="isStudent && hasRequestedHelp"
+      >
+        已收到您的意向，请等待管理员同意
+      </el-button>
     </el-form-item>
   </el-form>
 </template>
@@ -62,10 +78,19 @@ export default {
     user: {
       handler(user) {
         if (user) {
-          this.form = { nickName: user.nickName, phonenumber: user.phonenumber, email: user.email, sex: user.sex }
+          this.form = { nickName: user.nickName, phonenumber: user.phonenumber, email: user.email, sex: user.sex, remark: user.remark }
         }
       },
       immediate: true
+    }
+  },
+  computed: {
+    hasRequestedHelp() {
+      return this.user && this.user.remark === 'help_others';
+    },
+    isStudent() {
+      if (!this.user || !this.user.roles || this.user.roles.length === 0) return true;
+      return this.user.roles.some(r => r.roleId === 100) && !this.user.roles.some(r => r.roleId === 2);
     }
   },
   methods: {
@@ -82,6 +107,15 @@ export default {
     },
     close() {
       this.$tab.closePage()
+    },
+    handleHelpOthers() {
+      this.$alert("请等待管理员同意", "提示", {
+        type: "success"
+      }).then(() => {
+        this.form.remark = 'help_others';
+        this.user.remark = 'help_others';
+        this.submit();
+      });
     }
   }
 }

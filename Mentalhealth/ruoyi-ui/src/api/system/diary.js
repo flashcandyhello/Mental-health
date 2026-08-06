@@ -43,11 +43,11 @@ export function delDiary(id) {
     })
 }
 
-export function getChartData(userId) {
+export function getChartData(userId, nickName) {
     return request({
         url: '/system/diary/chartData',
         method: 'get',
-        params: { userId } // 传递userId参数
+        params: { userId, nickName } // 同时传递userId和nickName参数
     })
 }
 

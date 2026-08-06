@@ -271,6 +271,32 @@ public class SysUserServiceImpl implements ISysUserService
     }
 
     /**
+     * 密码复杂度正则表达式：必须包含大写字母、小写字母、特殊字符，长度8-20位
+     */
+    private static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,20}$";
+
+    /**
+     * 校验密码复杂度
+     * 
+     * @param password 密码
+     */
+    private void validatePasswordComplexity(String password)
+    {
+        if (StringUtils.isEmpty(password))
+        {
+            throw new ServiceException("密码不能为空");
+        }
+        if (password.length() < 8 || password.length() > 20)
+        {
+            throw new ServiceException("密码长度必须为 8-20 位");
+        }
+        if (!password.matches(PASSWORD_PATTERN))
+        {
+            throw new ServiceException("密码必须同时包含：大写字母、小写字母、特殊字符(!@#$%^&*等)");
+        }
+    }
+
+    /**
      * 注册用户信息
      * 
      * @param user 用户信息
@@ -279,6 +305,9 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public boolean registerUser(SysUser user)
     {
+        // 校验密码复杂度
+        validatePasswordComplexity(user.getPassword());
+        
         user.setCreateBy(user.getUserName());
         user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
 

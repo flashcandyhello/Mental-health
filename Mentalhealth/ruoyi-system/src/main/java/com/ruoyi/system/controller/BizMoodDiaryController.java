@@ -25,7 +25,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 /**
  * 学生心情日记Controller
  * 
- * @author ruoyi
+ * @author zzs
  * @date 2025-12-23
  */
 @RestController

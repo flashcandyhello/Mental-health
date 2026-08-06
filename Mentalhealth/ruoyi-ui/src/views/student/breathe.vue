@@ -47,16 +47,27 @@
 </template>
 
 <script>
+import { mapGetters } from "vuex";
+
 export default {
   name: "StudentBreathe",
   data() {
     return {
       isBreathing: false,
       statusText: "准备", // 圆圈中间的字
-      instructionDetail: "保持平静...", // 下方的详细提示
+      instructionDetail: "点击下方按钮开始", // 下方的详细提示
       timer: null,
-      cycleStep: 0 // 0:吸气, 1:屏气, 2:呼气
+      cycleStep: 0, // 0:吸气, 1:屏气, 2:呼气
+      cycleCount: 0, // 呼吸周期计数
+      totalCycles: 3 // 完成3个周期后唤醒宠物
     };
+  },
+  computed: {
+    ...mapGetters(["name"]),
+    // 获取当前用户唯一标识
+    userKey() {
+      return this.name || 'anonymous';
+    }
   },
   beforeDestroy() {
     this.stopBreathing();
@@ -71,11 +82,13 @@ export default {
     },
     startBreathing() {
       this.isBreathing = true;
+      this.cycleCount = 0;
       this.runCycle();
       // 4-2-4 呼吸法循环 (总周期 10秒)
       // 吸气 4s -> 屏气 2s -> 呼气 4s
       this.timer = setInterval(() => {
         this.runCycle();
+        this.cycleCount++;
       }, 10000); 
     },
     runCycle() {
@@ -103,6 +116,18 @@ export default {
       this.instructionDetail = "点击下方按钮开始";
       clearInterval(this.timer);
       this.timer = null;
+      
+      // 检查是否完成了足够的周期来唤醒宠物
+      if (this.cycleCount >= this.totalCycles) {
+        this.wakeUpPet();
+      }
+      this.cycleCount = 0;
+    },
+    // 【新增】唤醒宠物 - 设置时间戳（按用户隔离）
+    wakeUpPet() {
+      const keyPrefix = `zhi_xin_${this.userKey}_`;
+      localStorage.setItem(`${keyPrefix}breathing_wakeup_timestamp`, Date.now().toString());
+      this.$modal.msgSuccess("深呼吸完成！小星辰已被唤醒，快去记录心情吧~");
     }
   }
 };

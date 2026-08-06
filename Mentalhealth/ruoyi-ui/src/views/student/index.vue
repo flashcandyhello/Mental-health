@@ -8,9 +8,11 @@
 
     <!-- 虚拟宠物组件 -->
     <div class="pet-container" @click="wakeUpPet">
-      <div :class="['pet-emoji', petSizeClass]">
-        <span v-if="isPetSleeping">😴</span> <!-- 猫咪睡觉时图标 -->
-        <span v-else>{{ petEmoji }}</span>   <!-- 猫咪清醒时图标 -->
+      <div class="live2d-wrapper" v-show="!isPetSleeping">
+        <canvas id="live2d-canvas" width="200" height="200"></canvas>
+      </div>
+      <div class="sleep-wrapper" v-show="isPetSleeping">
+        <span class="pet-emoji pet-size-cat">😴</span> 
       </div>
       <div class="pet-status-text">
         <span>{{ petEmojiText }}</span> <!-- 统一使用 petEmojiText 来显示所有状态文本 -->
@@ -119,9 +121,13 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["roles"]),
+    ...mapGetters(["roles", "name"]),
     isNonStudent() {
       return this.roles && !this.roles.includes("lower");
+    },
+    // 获取当前用户唯一标识（用于隔离各用户的宠物数据）
+    userKey() {
+      return this.name || 'anonymous';
     },
 
     currentDate() {
@@ -150,15 +156,23 @@ export default {
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
 
+      const todayStr = today.toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' });
       const yesterdayStr = yesterday.toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' });
       const lastRecordDateStr = this.lastMoodRecordDate ? new Date(this.lastMoodRecordDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' }) : null;
       
-      // 检查深呼吸唤醒是否仍在有效期内 (30分钟)
+      // 检查深呼吸唤醒是否仍在有效期内 (45分钟)
       const isBreathingAwake = this.breathingWakeupTimestamp && 
-                               (Date.now() - this.breathingWakeupTimestamp < 30 * 60 * 1000); // 30分钟 = 30 * 60 * 1000 毫秒
+                               (Date.now() - this.breathingWakeupTimestamp < 45 * 60 * 1000); // 45分钟 = 45 * 60 * 1000 毫秒
 
-      // 如果昨天没有记录心情，且深呼吸唤醒已过期或从未唤醒，则宠物睡觉
-      return lastRecordDateStr !== yesterdayStr && !isBreathingAwake;
+      // 优化唤醒逻辑：
+      // 1. 如果是刚注册的新用户（从未签到过），则是清醒的
+      // 2. 如果今天已经签到，则是清醒的
+      // 3. 如果昨天签到了（正在等待今天签到），则是清醒的
+      // 4. 如果刚刚做完深呼吸，则是清醒的
+      const isNewUser = this.continuousCheckInDays === 0 && !this.lastMoodRecordDate;
+      const isAwake = isNewUser || (lastRecordDateStr === todayStr) || (lastRecordDateStr === yesterdayStr) || isBreathingAwake;
+
+      return !isAwake;
     },
     petSizeClass() {
       if (this.continuousCheckInDays >= 30) {
@@ -186,13 +200,9 @@ export default {
         if (this.isPetSleeping) {
             return '小星辰在睡觉，需要唤醒';
         } else if (this.continuousCheckInDays === 0) {
-            return '一颗新的小星辰在闪耀！';
-        } else if (this.continuousCheckInDays < 7) {
-            return `你的小星辰成长中！已陪伴你${this.continuousCheckInDays}天`;
-        } else if (this.continuousCheckInDays < 30) {
-            return `你的猫咪很健康！已陪伴你${this.continuousCheckInDays}天`;
+            return '初次见面！我是小星辰 🐾';
         } else {
-            return `你的狮子很威风！已陪伴你${this.continuousCheckInDays}天`;
+            return `小星辰健康成长中！已陪伴你${this.continuousCheckInDays}天`;
         }
     }
   },
@@ -203,6 +213,10 @@ export default {
     this.getPetData();
     this.checkBreathingWakeUp();
     this.loadLastQuickCheckInDate(); // 【新增】加载上次快速签到日期
+  },
+  mounted() {
+    // 组件挂载后，加载 Live2D 脚本
+    this.loadLive2DScript();
   },
   methods: {
     goToBackend() {
@@ -253,9 +267,9 @@ export default {
       }
 
       // 只有在宠物非睡眠状态时，才能进行快速签到
-      // isPetSleeping 已经考虑了深呼吸唤醒的30分钟有效期
+      // isPetSleeping 已经考虑了深呼吸唤醒的45分钟有效期
       if (this.isPetSleeping) {
-        this.$modal.msgWarning("猫咪在睡觉，请先唤醒它！");
+        this.$modal.msgWarning("小星辰在睡觉，请先点击它进行唤醒！");
         return;
       }
 
@@ -271,16 +285,17 @@ export default {
         // 更新最近一次心情记录日期 (用于判断宠物是否睡觉)
         this.lastMoodRecordDate = this.todayDateString;
         // 这里只是一个简单的模拟递增，实际应根据业务逻辑判断是否连续
-        this.continuousCheckInDays = (this.continuousCheckInDays || 0) + 1; 
-        localStorage.setItem('zhi_xin_continuous_days', this.continuousCheckInDays);
-        localStorage.setItem('zhi_xin_last_mood_date', this.lastMoodRecordDate);
+        this.continuousCheckInDays = (this.continuousCheckInDays || 0) + 1;
+        const keyPrefix = `zhi_xin_${this.userKey}_`;
+        localStorage.setItem(`${keyPrefix}continuous_days`, this.continuousCheckInDays);
+        localStorage.setItem(`${keyPrefix}last_mood_date`, this.lastMoodRecordDate);
         
         // 标记今天已经快速签到
         this.lastQuickCheckInDate = this.todayDateString;
-        localStorage.setItem('zhi_xin_last_quick_checkin_date', this.lastQuickCheckInDate);
+        localStorage.setItem(`${keyPrefix}last_quick_checkin_date`, this.lastQuickCheckInDate);
 
         // 签到后清除深呼吸唤醒的时间戳，避免影响连续打卡逻辑
-        localStorage.removeItem('zhi_xin_breathing_wakeup_timestamp');
+        localStorage.removeItem(`${keyPrefix}breathing_wakeup_timestamp`);
         this.breathingWakeupTimestamp = null;
       });
     },
@@ -297,65 +312,45 @@ export default {
       this.$modal.msgWarning(text);
     },
 
-    // 【新增】获取宠物数据 (模拟)
+    // 【新增】获取宠物数据 (按用户隔离)
     getPetData() {
-        // 实际应用中这里会调用后端API获取用户的连续打卡天数和上次心情记录日期
-        // 假设通过 localStorage 模拟数据
-        this.continuousCheckInDays = parseInt(localStorage.getItem('zhi_xin_continuous_days') || '0');
-        this.lastMoodRecordDate = localStorage.getItem('zhi_xin_last_mood_date') || null;
+        // 使用用户标识作为 key 前缀，实现数据隔离
+        const keyPrefix = `zhi_xin_${this.userKey}_`;
+        this.continuousCheckInDays = parseInt(localStorage.getItem(`${keyPrefix}continuous_days`) || '0');
+        this.lastMoodRecordDate = localStorage.getItem(`${keyPrefix}last_mood_date`) || null;
     },
 
     // 【新增】唤醒宠物逻辑
     wakeUpPet() {
       if (this.isPetSleeping) {
-        this.$modal.confirm('你的猫咪还在睡觉哦，需要完成一次深呼吸训练才能唤醒它并继续记录心情。现在就去深呼吸吗？', '唤醒宠物', {
+        this.$modal.confirm('因为昨天忘记记录心情，小星辰睡着啦！💤\n需要去完成一次【深呼吸解压】才能唤醒它。现在就去深呼吸吗？', '唤醒小星辰', {
           confirmButtonText: '去深呼吸',
-          cancelButtonText: '取消',
-          type: 'info'
+          cancelButtonText: '再让它睡会',
+          type: 'warning'
         }).then(() => {
           this.$router.push('/student/breathe');
-        }).catch(() => {
-          // 用户取消，不进行任何操作
-        });
-      } else {
-          this.$modal.msgSuccess("你的猫咪精力充沛！");
+        }).catch(() => {});
       }
-    },
-
-    // 【新增】唤醒宠物逻辑
-    wakeUpPet() {
-      // isPetSleeping 已经包含了30分钟唤醒状态的判断
-      if (this.isPetSleeping) {
-        this.$modal.confirm('你的猫咪还在睡觉哦，需要完成一次深呼吸训练才能唤醒它并继续记录心情。现在就去深呼吸吗？', '唤醒宠物', {
-          confirmButtonText: '去深呼吸',
-          cancelButtonText: '取消',
-          type: 'info'
-        }).then(() => {
-          this.$router.push('/student/breathe');
-        }).catch(() => {
-          // 用户取消，不进行任何操作
-        });
-      } else {
-          this.$modal.msgSuccess("你的猫咪精力充沛！");
-      }
+      // 如果是清醒状态，就不弹窗了，让 Live2D 自身的点击互动生效
     },
 
     // 【新增】检查深呼吸唤醒状态
     checkBreathingWakeUp() {
-        // 从 localStorage 获取深呼吸完成的时间戳
-        const timestampStr = localStorage.getItem('zhi_xin_breathing_wakeup_timestamp');
+        // 从 localStorage 获取深呼吸完成的时间戳（按用户隔离）
+        const keyPrefix = `zhi_xin_${this.userKey}_`;
+        const timestampStr = localStorage.getItem(`${keyPrefix}breathing_wakeup_timestamp`);
         if (timestampStr) {
             const storedTimestamp = parseInt(timestampStr, 10);
             const currentTime = Date.now();
-            const thirtyMinutesInMillis = 30 * 60 * 1000; // 30分钟的毫秒数
+            const fortyFiveMinutesInMillis = 45 * 60 * 1000; // 45分钟的毫秒数
 
-            if (currentTime - storedTimestamp < thirtyMinutesInMillis) {
-                // 如果在30分钟内，则宠物处于唤醒状态
+            if (currentTime - storedTimestamp < fortyFiveMinutesInMillis) {
+                // 如果在45分钟内，则宠物处于唤醒状态
                 this.breathingWakeupTimestamp = storedTimestamp;
                 // 不需要直接设置 petStatusText，因为 petEmojiText 计算属性会处理
             } else {
-                // 超过30分钟，清除唤醒状态
-                localStorage.removeItem('zhi_xin_breathing_wakeup_timestamp');
+                // 超过45分钟，清除唤醒状态
+                localStorage.removeItem(`${keyPrefix}breathing_wakeup_timestamp`);
                 this.breathingWakeupTimestamp = null;
                 // 不需要直接设置 petStatusText，因为 petEmojiText 计算属性会处理
             }
@@ -367,12 +362,36 @@ export default {
     },
     // 【新增】加载上次快速签到日期
     loadLastQuickCheckInDate() {
-      this.lastQuickCheckInDate = localStorage.getItem('zhi_xin_last_quick_checkin_date') || null;
+      const keyPrefix = `zhi_xin_${this.userKey}_`;
+      this.lastQuickCheckInDate = localStorage.getItem(`${keyPrefix}last_quick_checkin_date`) || null;
       // 如果日期不是今天，则清除上次的记录，确保每日签到逻辑正常
       if (this.lastQuickCheckInDate !== this.todayDateString) {
         this.lastQuickCheckInDate = null;
-        localStorage.removeItem('zhi_xin_last_quick_checkin_date');
+        localStorage.removeItem(`${keyPrefix}last_quick_checkin_date`);
       }
+    },
+    // 【新增】加载并初始化 Live2D
+    loadLive2DScript() {
+      if (window.loadlive2d) {
+        this.initLive2D();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/live2d.min.js";
+      script.onload = () => {
+        this.initLive2D();
+      };
+      document.head.appendChild(script);
+    },
+    initLive2D() {
+      // 使用可爱的白猫 tororo 模型
+      const modelUrl = "https://fastly.jsdelivr.net/npm/live2d-widget-model-tororo@1.0.5/assets/tororo.model.json";
+      // 将 Live2D 模型加载到我们指定的 canvas 中
+      setTimeout(() => {
+        if (document.getElementById("live2d-canvas")) {
+          window.loadlive2d("live2d-canvas", modelUrl);
+        }
+      }, 300);
     }
   }
 };
@@ -528,28 +547,34 @@ export default {
   max-width: 90%;
 }
 
+.live2d-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px; /* 固定高度，防止模型加载时页面抖动 */
+}
+
+.sleep-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+#live2d-canvas {
+  cursor: pointer;
+  /* 取消原有的反弹动画，让 Live2D 自带的动画发挥作用 */
+}
+
 .pet-emoji {
   display: inline-block;
-  font-size: 40px; /* Default size for baby/egg */
   transition: all 0.5s ease-in-out;
-  transform-origin: center bottom; /* For a 'growing' effect */
-  animation: bounce 2s infinite ease-in-out; /* Basic animation */
-}
-
-.pet-emoji.pet-size-egg {
-  font-size: 40px;
-}
-
-.pet-emoji.pet-size-baby {
-  font-size: 50px; /* Small cat */
+  transform-origin: center bottom;
+  animation: bounce 2s infinite ease-in-out;
 }
 
 .pet-emoji.pet-size-cat {
-  font-size: 60px; /* Medium cat */
-}
-
-.pet-emoji.pet-size-lion {
-  font-size: 70px; /* Large lion */
+  font-size: 60px; /* 睡觉时的 Emoji 大小 */
 }
 
 .pet-status-text {
