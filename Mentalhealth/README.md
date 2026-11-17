@@ -10,7 +10,7 @@
 ## 平台简介
 
 心理健康系统，使用了若依的框架，并结合ai模块自动识别与心理值公式计算，动态管理学生心理状态，采用无感监测，只援助，不采集任何信息。
-
+* ai使用deepseekv4模型。
 * 前端采用Vue、Element UI。
 * 后端采用Spring Boot、Spring Security、Redis & Jwt。
 * 权限认证使用Jwt，支持多终端认证系统。
